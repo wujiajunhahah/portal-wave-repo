@@ -602,7 +602,7 @@
     <!-- Three.js 3D 渲染脚本 -->
     <script type="module">
         import * as THREE from 'three';
-        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // 创建场景、相机和渲染器
@@ -691,69 +691,147 @@
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
 
-        // 创建OBJ加载器
-        const objLoader = new OBJLoader(loadingManager);
-        console.log('开始加载模型...');
+        // 创建GLTF加载器并加载GLB模型
+        const gltfLoader = new GLTFLoader(loadingManager);
+        console.log('开始加载GLB模型...');
 
-        // 由于模型文件过大，显示3D立方体演示
-        console.log('模型文件过大，显示演示立方体');
+        gltfLoader.load('电梯.glb',
+            function (gltf) {
+                console.log('GLB模型加载成功！');
 
-        // 创建电梯主题的立方体
-        const elevatorGeometry = new THREE.BoxGeometry(2, 3, 1.5);
-        const elevatorMaterial = new THREE.MeshStandardMaterial({
-            color: 0x00ccff,
-            metalness: 0.6,
-            roughness: 0.2
-        });
-        const elevatorCube = new THREE.Mesh(elevatorGeometry, elevatorMaterial);
-        elevatorCube.position.y = 1.5;
-        scene.add(elevatorCube);
+                const model = gltf.scene;
 
-        // 添加海浪效果
-        const waveGeometry = new THREE.PlaneGeometry(8, 8, 32, 32);
-        const waveMaterial = new THREE.MeshStandardMaterial({
-            color: 0x0077ff,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.DoubleSide
-        });
-        const wave = new THREE.Mesh(waveGeometry, waveMaterial);
-        wave.rotation.x = -Math.PI / 2;
-        wave.position.y = 0;
-        scene.add(wave);
+                // 调整模型大小和位置
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2 / maxDim;
 
-        // 移除测试立方体
-        scene.remove(testCube);
+                model.scale.multiplyScalar(scale);
+                model.position.sub(center.multiplyScalar(scale));
+                model.position.y = -0.5; // 确保模型在地面上
 
-        // 设置相机位置
-        camera.position.set(5, 3, 5);
-        controls.target.set(0, 1, 0);
-        controls.update();
+                // 添加到场景
+                scene.add(model);
 
-        // 添加旋转动画
-        function animateWave() {
-            wave.geometry.vertices.forEach((vertex, i) => {
-                const time = Date.now() * 0.001;
-                const waveHeight = Math.sin(vertex.x * 0.5 + time) * 0.3;
-                vertex.z = waveHeight;
-            });
-            wave.geometry.verticesNeedUpdate = true;
-            wave.geometry.computeVertexNormals();
-        }
+                // 移除测试立方体
+                scene.remove(testCube);
 
-        // 在动画循环中调用
-        const originalAnimate = animate;
-        function animate() {
-            frameId = requestAnimationFrame(animate);
-
-            animateWave();
-            elevatorCube.rotation.y += 0.005;
-
-            if (controls.enabled && controls.update) {
+                // 设置相机位置
+                camera.position.set(5, 2, 5);
+                controls.target.set(0, 0.5, 0);
                 controls.update();
+
+                // 添加旋转动画
+                function animateModel() {
+                    const time = Date.now() * 0.001;
+                    model.rotation.y += 0.005;
+
+                    // 轻微的上下浮动
+                    model.position.y = -0.5 + Math.sin(time * 2) * 0.1;
+                }
+
+                // 在动画循环中调用
+                function animate() {
+                    frameId = requestAnimationFrame(animate);
+
+                    animateModel();
+
+                    if (controls.enabled && controls.update) {
+                        controls.update();
+                    }
+
+                    renderer.render(scene, camera);
+                }
+            },
+            function (xhr) {
+                const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                if (progressElement) {
+                    progressElement.textContent = `${percent}%`;
+                }
+                console.log(percent + '% 已加载');
+            },
+            function (error) {
+                console.error('GLB模型加载错误：', error);
+                alert('❌ GLB模型加载失败：' + error.message);
+
+                // 如果加载失败，显示立方体演示
+                createFallbackModel();
+            }
+        );
+
+        // 备用演示模型
+        function createFallbackModel() {
+            console.log('显示立方体演示');
+
+            // 创建舞台地板
+            const stageGeometry = new THREE.BoxGeometry(8, 0.2, 6);
+            const stageMaterial = new THREE.MeshStandardMaterial({
+                color: 0x8b4513,
+                metalness: 0.3,
+                roughness: 0.8
+            });
+            const stage = new THREE.Mesh(stageGeometry, stageMaterial);
+            stage.position.y = -1;
+            scene.add(stage);
+
+            // 创建两个表演者立方体
+            const performerGeometry = new THREE.BoxGeometry(1, 2, 1);
+
+            // Kanye (红色)
+            const kanyeMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                metalness: 0.4,
+                roughness: 0.3
+            });
+            const kanyeCube = new THREE.Mesh(performerGeometry, kanyeMaterial);
+            kanyeCube.position.set(-2, 0, 0);
+            scene.add(kanyeCube);
+
+            // 用户 (蓝色)
+            const userMaterial = new THREE.MeshStandardMaterial({
+                color: 0x00ccff,
+                metalness: 0.4,
+                roughness: 0.3
+            });
+            const userCube = new THREE.Mesh(performerGeometry, userMaterial);
+            userCube.position.set(2, 0, 0);
+            scene.add(userCube);
+
+            // 移除测试立方体
+            scene.remove(testCube);
+
+            // 设置相机位置
+            camera.position.set(8, 4, 8);
+            controls.target.set(0, 0, 0);
+            controls.update();
+
+            // 添加表演动画
+            function animatePerformance() {
+                const time = Date.now() * 0.001;
+
+                // Kanye 动作
+                kanyeCube.position.y = Math.abs(Math.sin(time * 2)) * 0.5;
+                kanyeCube.rotation.y = time * 0.5;
+
+                // 用户动作
+                userCube.position.y = Math.abs(Math.cos(time * 2)) * 0.3;
+                userCube.rotation.y = -time * 0.3;
             }
 
-            renderer.render(scene, camera);
+            // 在动画循环中调用
+            function animate() {
+                frameId = requestAnimationFrame(animate);
+
+                animatePerformance();
+
+                if (controls.enabled && controls.update) {
+                    controls.update();
+                }
+
+                renderer.render(scene, camera);
+            }
         }
 
         // 隐藏加载界面
