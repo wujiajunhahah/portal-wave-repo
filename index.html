@@ -691,140 +691,125 @@
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
 
-        // 创建GLTF加载器并加载GLB模型
-        const gltfLoader = new GLTFLoader(loadingManager);
-        console.log('开始加载GLB模型...');
+        // 使用原模板的文件检查机制加载GLB模型
+        fetch('电梯.glb')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            console.log('GLB文件存在，开始加载模型');
 
-        gltfLoader.load('电梯.glb',
-            function (gltf) {
-                console.log('GLB模型加载成功！');
+            // 尝试使用缓存
+            const modelCache = localStorage.getItem('elevatorModelCache');
+            if (modelCache) {
+              console.log('使用缓存的模型数据');
+              const gltfLoader = new GLTFLoader(loadingManager);
+              try {
+                const gltf = gltfLoader.parse(modelCache);
+                setupModel(gltf.scene);
+                return;
+              } catch (e) {
+                console.warn('缓存解析失败:', e);
+              }
+            }
 
-                const model = gltf.scene;
+            // 创建GLTF加载器并加载GLB模型
+            const gltfLoader = new GLTFLoader(loadingManager);
+            gltfLoader.load('电梯.glb',
+                function (gltf) {
+                    console.log('GLB模型加载成功！');
 
-                // 调整模型大小和位置
-                const box = new THREE.Box3().setFromObject(model);
-                const size = box.getSize(new THREE.Vector3());
-                const center = box.getCenter(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 2 / maxDim;
-
-                model.scale.multiplyScalar(scale);
-                model.position.sub(center.multiplyScalar(scale));
-                model.position.y = -0.5; // 确保模型在地面上
-
-                // 添加到场景
-                scene.add(model);
-
-                // 移除测试立方体
-                scene.remove(testCube);
-
-                // 设置相机位置
-                camera.position.set(5, 2, 5);
-                controls.target.set(0, 0.5, 0);
-                controls.update();
-
-                // 添加旋转动画
-                function animateModel() {
-                    const time = Date.now() * 0.001;
-                    model.rotation.y += 0.005;
-
-                    // 轻微的上下浮动
-                    model.position.y = -0.5 + Math.sin(time * 2) * 0.1;
-                }
-
-                // 在动画循环中调用
-                function animate() {
-                    frameId = requestAnimationFrame(animate);
-
-                    animateModel();
-
-                    if (controls.enabled && controls.update) {
-                        controls.update();
+                    // 缓存模型数据
+                    try {
+                        // 将gltf对象转换为字符串存储
+                        const modelJson = JSON.stringify(gltf.scene.toJSON());
+                        localStorage.setItem('elevatorModelCache', modelJson);
+                    } catch (e) {
+                        console.warn('模型缓存失败:', e);
                     }
 
-                    renderer.render(scene, camera);
+                    setupModel(gltf.scene);
+                },
+                function (xhr) {
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    if (progressElement) {
+                        progressElement.textContent = `${percent}%`;
+                    }
+                    console.log(percent + '% 已加载');
+                },
+                function (error) {
+                    console.error('GLB模型加载错误：', error);
+                    alert('❌ GLB模型加载失败：' + error.message);
+                    createFallbackModel();
                 }
-            },
-            function (xhr) {
-                const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
-                if (progressElement) {
-                    progressElement.textContent = `${percent}%`;
-                }
-                console.log(percent + '% 已加载');
-            },
-            function (error) {
-                console.error('GLB模型加载错误：', error);
-                alert('❌ GLB模型加载失败：' + error.message);
+            );
+          })
+          .catch(error => {
+            console.error('GLB文件检查失败：', error);
+            alert('❌ 无法找到GLB模型文件，请确保"电梯.glb"文件在正确的位置');
+            createFallbackModel();
+          });
 
-                // 如果加载失败，显示立方体演示
-                createFallbackModel();
-            }
-        );
-
-        // 备用演示模型
+        // 备用演示模型 - 电梯和海浪主题
         function createFallbackModel() {
-            console.log('显示立方体演示');
+            console.log('显示电梯海浪演示');
 
-            // 创建舞台地板
-            const stageGeometry = new THREE.BoxGeometry(8, 0.2, 6);
-            const stageMaterial = new THREE.MeshStandardMaterial({
-                color: 0x8b4513,
+            // 创建电梯立方体
+            const elevatorGeometry = new THREE.BoxGeometry(2, 3, 2);
+            const elevatorMaterial = new THREE.MeshStandardMaterial({
+                color: 0x666666,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            const elevator = new THREE.Mesh(elevatorGeometry, elevatorMaterial);
+            scene.add(elevator);
+
+            // 创建海浪效果
+            const waveGeometry = new THREE.PlaneGeometry(10, 6, 32, 16);
+            const waveMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0099ff,
                 metalness: 0.3,
-                roughness: 0.8
+                roughness: 0.4,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
             });
-            const stage = new THREE.Mesh(stageGeometry, stageMaterial);
-            stage.position.y = -1;
-            scene.add(stage);
-
-            // 创建两个表演者立方体
-            const performerGeometry = new THREE.BoxGeometry(1, 2, 1);
-
-            // Kanye (红色)
-            const kanyeMaterial = new THREE.MeshStandardMaterial({
-                color: 0xff0000,
-                metalness: 0.4,
-                roughness: 0.3
-            });
-            const kanyeCube = new THREE.Mesh(performerGeometry, kanyeMaterial);
-            kanyeCube.position.set(-2, 0, 0);
-            scene.add(kanyeCube);
-
-            // 用户 (蓝色)
-            const userMaterial = new THREE.MeshStandardMaterial({
-                color: 0x00ccff,
-                metalness: 0.4,
-                roughness: 0.3
-            });
-            const userCube = new THREE.Mesh(performerGeometry, userMaterial);
-            userCube.position.set(2, 0, 0);
-            scene.add(userCube);
+            const wave = new THREE.Mesh(waveGeometry, waveMaterial);
+            wave.position.z = -3;
+            scene.add(wave);
 
             // 移除测试立方体
             scene.remove(testCube);
 
             // 设置相机位置
-            camera.position.set(8, 4, 8);
+            camera.position.set(6, 3, 6);
             controls.target.set(0, 0, 0);
             controls.update();
 
-            // 添加表演动画
-            function animatePerformance() {
+            // 添加电梯和海浪动画
+            function animateElevatorWave() {
                 const time = Date.now() * 0.001;
 
-                // Kanye 动作
-                kanyeCube.position.y = Math.abs(Math.sin(time * 2)) * 0.5;
-                kanyeCube.rotation.y = time * 0.5;
+                // 海浪动画
+                const positions = wave.geometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    const x = positions.getX(i);
+                    const y = positions.getY(i);
+                    const waveHeight = Math.sin(x * 0.5 + time * 2) * 0.3;
+                    positions.setZ(i, waveHeight);
+                }
+                positions.needsUpdate = true;
+                wave.geometry.computeVertexNormals();
 
-                // 用户动作
-                userCube.position.y = Math.abs(Math.cos(time * 2)) * 0.3;
-                userCube.rotation.y = -time * 0.3;
+                // 电梯轻微震动
+                elevator.position.y = Math.sin(time * 4) * 0.05;
             }
 
             // 在动画循环中调用
             function animate() {
                 frameId = requestAnimationFrame(animate);
 
-                animatePerformance();
+                animateElevatorWave();
 
                 if (controls.enabled && controls.update) {
                     controls.update();
@@ -832,6 +817,9 @@
 
                 renderer.render(scene, camera);
             }
+
+            // 启动动画
+            animate();
         }
 
         // 隐藏加载界面
