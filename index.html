@@ -544,6 +544,10 @@
                     <span>点赞</span>
                     <span class="stats-count">3.1k</span>
                 </div>
+                <div class="interaction-btn" onclick="downloadModel()">
+                    <span>📥</span>
+                    <span>下载模型</span>
+                </div>
             </div>
         </div>
 
@@ -588,6 +592,10 @@
             setTimeout(() => {
                 toast.classList.remove('show');
             }, 2000);
+        }
+
+        function downloadModel() {
+            showToast('📥 模型文件获取方式：\n1. 联系作者获取完整 .usdz 文件\n2. 或通过云盘链接下载\n3. 支持AR查看的完整3D模型');
         }
     </script>
 
@@ -687,53 +695,75 @@
         const objLoader = new OBJLoader(loadingManager);
         console.log('开始加载模型...');
 
-        // 优化模型加载
-        fetch('电梯.usdz')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                console.log('文件存在，开始加载模型');
+        // 由于模型文件过大，显示3D立方体演示
+        console.log('模型文件过大，显示演示立方体');
 
-                // 添加响应缓存
-                const modelCache = localStorage.getItem('elevatorModelCache');
-                if (modelCache) {
-                    console.log('使用缓存的模型数据');
-                    const object = objLoader.parse(modelCache);
-                    setupModel(object);
-                    return;
-                }
+        // 创建电梯主题的立方体
+        const elevatorGeometry = new THREE.BoxGeometry(2, 3, 1.5);
+        const elevatorMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ccff,
+            metalness: 0.6,
+            roughness: 0.2
+        });
+        const elevatorCube = new THREE.Mesh(elevatorGeometry, elevatorMaterial);
+        elevatorCube.position.y = 1.5;
+        scene.add(elevatorCube);
 
-                objLoader.load('电梯.usdz',
-                    function (object) {
-                        console.log('模型加载成功！');
+        // 添加海浪效果
+        const waveGeometry = new THREE.PlaneGeometry(8, 8, 32, 32);
+        const waveMaterial = new THREE.MeshStandardMaterial({
+            color: 0x0077ff,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        const wave = new THREE.Mesh(waveGeometry, waveMaterial);
+        wave.rotation.x = -Math.PI / 2;
+        wave.position.y = 0;
+        scene.add(wave);
 
-                        // 缓存模型数据
-                        try {
-                            localStorage.setItem('elevatorModelCache', JSON.stringify(object.toJSON()));
-                        } catch (e) {
-                            console.warn('模型缓存失败:', e);
-                        }
+        // 移除测试立方体
+        scene.remove(testCube);
 
-                        setupModel(object);
-                    },
-                    function (xhr) {
-                        const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
-                        if (progressElement) {
-                            progressElement.textContent = `${percent}%`;
-                        }
-                        console.log(percent + '% 已加载');
-                    },
-                    function (error) {
-                        console.error('加载错误：', error);
-                        alert('❌ 模型加载失败：' + error.message);
-                    }
-                );
-            })
-            .catch(error => {
-                console.error('文件检查失败：', error);
-                alert('❌ 无法找到模型文件，请确保"电梯.usdz"文件在正确的位置');
+        // 设置相机位置
+        camera.position.set(5, 3, 5);
+        controls.target.set(0, 1, 0);
+        controls.update();
+
+        // 添加旋转动画
+        function animateWave() {
+            wave.geometry.vertices.forEach((vertex, i) => {
+                const time = Date.now() * 0.001;
+                const waveHeight = Math.sin(vertex.x * 0.5 + time) * 0.3;
+                vertex.z = waveHeight;
             });
+            wave.geometry.verticesNeedUpdate = true;
+            wave.geometry.computeVertexNormals();
+        }
+
+        // 在动画循环中调用
+        const originalAnimate = animate;
+        function animate() {
+            frameId = requestAnimationFrame(animate);
+
+            animateWave();
+            elevatorCube.rotation.y += 0.005;
+
+            if (controls.enabled && controls.update) {
+                controls.update();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // 隐藏加载界面
+        setTimeout(() => {
+            loading.style.display = 'none';
+            document.body.style.cursor = 'default';
+
+            // 显示模型下载提示
+            showToast('📥 模型文件过大，请点击下载按钮获取完整模型');
+        }, 1000);
 
         // 模型设置函数
         function setupModel(object) {
