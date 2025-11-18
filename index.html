@@ -488,6 +488,50 @@
                 height: 50vh;
             }
         }
+        /* 语言切换按钮 */
+        .language-switcher {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 214, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 214, 255, 0.2);
+            border-radius: 25px;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .language-switcher:hover {
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 214, 255, 0.2);
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn.active {
+            background: var(--highlight);
+            color: var(--main-bg);
+            font-weight: 600;
+        }
+
+        .lang-btn:hover:not(.active) {
+            background: rgba(0, 214, 255, 0.2);
+            color: var(--highlight);
+        }
     </style>
 </head>
 <body>
@@ -495,7 +539,7 @@
     <div id="loading">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <div class="loading-text">正在加载梦境...</div>
+            <div class="loading-text" data-i18n="loading">正在加载梦境...</div>
             <div class="loading-progress">0%</div>
         </div>
     </div>
@@ -509,7 +553,7 @@
     </a>
 
     <!-- 主标题 -->
-    <h1>梦境：电梯 · 海浪</h1>
+    <h1 data-i18n="title">梦境：电梯 · 海浪</h1>
 
     <!-- 主要内容容器 -->
     <div class="container">
@@ -530,23 +574,23 @@
                     <img src="IMG_1141.jpeg" alt="吴嘉俊的头像">
                 </div>
                 <div class="creator-info">
-                    <div class="creator-name">吴嘉俊</div>
-                    <div class="creator-title">学生</div>
+                    <div class="creator-name" data-i18n="creatorName">吴嘉俊</div>
+                    <div class="creator-title" data-i18n="creatorTitle">学生</div>
                 </div>
-                <button class="follow-btn" onclick="showToast('✨ 关注成功')">
-                    <span>关注</span>
+                <button class="follow-btn" onclick="showToast(i18nData[currentLang].followSuccess)">
+                    <span data-i18n="follow">关注</span>
                 </button>
             </div>
 
             <!-- 交互按钮 -->
             <div class="interaction-buttons">
-                <div class="interaction-btn" onclick="showToast('❤️ 点赞成功')">
-                    <span>点赞</span>
+                <div class="interaction-btn" onclick="showToast(i18nData[currentLang].likeSuccess)">
+                    <span data-i18n="like">点赞</span>
                     <span class="stats-count">3.1k</span>
                 </div>
                 <div class="interaction-btn" onclick="downloadModel()">
                     <span>📥</span>
-                    <span>下载模型</span>
+                    <span data-i18n="downloadModel">下载模型</span>
                 </div>
             </div>
         </div>
@@ -554,37 +598,146 @@
         <!-- 关键词卡片 -->
         <div class="card">
             <div class="keywords">
-                <span class="badge">电梯</span>
-                <span class="badge">海浪</span>
-                <span class="badge">未知空间</span>
-                <span class="badge">恐惧</span>
-                <span class="badge">突破</span>
-                <span class="badge">世界入口</span>
+                <span class="badge" data-i18n="keyword1">电梯</span>
+                <span class="badge" data-i18n="keyword2">海浪</span>
+                <span class="badge" data-i18n="keyword3">未知空间</span>
+                <span class="badge" data-i18n="keyword4">恐惧</span>
+                <span class="badge" data-i18n="keyword5">突破</span>
+                <span class="badge" data-i18n="keyword6">世界入口</span>
             </div>
         </div>
 
         <!-- 梦境描述卡片 -->
         <div class="card">
-            <strong>梦境描述</strong>
-            <p class="description">我做了一个很奇怪的梦。我走进一部电梯，本来只是想去楼下，但门一关上，整个空间突然变得异常安静。下一秒，电梯门缓缓打开，一道巨大的蓝色海浪正冲着我卷上来，像是某种"活"的东西，带着光、带着脉动，像是在呼吸。它没有真正拍到我，但我能感觉到一股力量在把我往前拉，好像它想让我进去。我记得自己站在门口不敢动，既害怕又莫名兴奋，就像站在一个全新的世界入口前。</p>
+            <strong data-i18n="dreamDescription">梦境描述</strong>
+            <p class="description" data-i18n="dreamContent">我做了一个很奇怪的梦。我走进一部电梯，本来只是想去楼下，但门一关上，整个空间突然变得异常安静。下一秒，电梯门缓缓打开，一道巨大的蓝色海浪正冲着我卷上来，像是某种"活"的东西，带着光、带着脉动，像是在呼吸。它没有真正拍到我，但我能感觉到一股力量在把我往前拉，好像它想让我进去。我记得自己站在门口不敢动，既害怕又莫名兴奋，就像站在一个全新的世界入口前。</p>
         </div>
 
         <!-- 梦境解析卡片 -->
         <div class="card">
-            <strong>梦境解析</strong>
-            <div class="analysis">
+            <strong data-i18n="dreamAnalysis">梦境解析</strong>
+            <div class="analysis" data-i18n="analysisContent">
                 这个梦象征着转变、压力与潜意识的召唤。电梯通常代表"状态改变"或"内在位置的移动"。海浪象征情绪、潜意识以及无法控制的外部力量。海浪向你"靠近但未淹没"，意味着你正在面对某种巨大的变化，但仍处在可以掌控的边缘。这种既害怕又兴奋的感觉，反映了你对未知领域的期待 —— 很可能与你近期的项目、未来规划或人生选择有关。梦正在推动你向前，让你跨入一个新的阶段。
             </div>
         </div>
 
         <!-- 进入 App 按钮 -->
         <div class="card" style="text-align: center">
-            <button class="btn" onclick="window.open('https://yourapp.link/download')">进入 App</button>
+            <button class="btn" onclick="window.open('https://yourapp.link/download')" data-i18n="enterApp">进入 App</button>
         </div>
+    </div>
+
+    <!-- 语言切换按钮 -->
+    <div class="language-switcher">
+        <button class="lang-btn active" onclick="switchLanguage('zh')">中文</button>
+        <button class="lang-btn" onclick="switchLanguage('en')">English</button>
     </div>
 
     <!-- Toast 显示函数 -->
     <script>
+        // 国际化语言包
+        const i18nData = {
+            zh: {
+                loading: "正在加载梦境...",
+                title: "梦境：电梯 · 海浪",
+                creatorName: "吴嘉俊",
+                creatorTitle: "学生",
+                follow: "关注",
+                followSuccess: "✨ 关注成功",
+                like: "点赞",
+                likeSuccess: "❤️ 点赞成功",
+                downloadModel: "下载模型",
+                keyword1: "电梯",
+                keyword2: "海浪",
+                keyword3: "未知空间",
+                keyword4: "恐惧",
+                keyword5: "突破",
+                keyword6: "世界入口",
+                dreamDescription: "梦境描述",
+                dreamContent: "我做了一个很奇怪的梦。我走进一部电梯，本来只是想去楼下，但门一关上，整个空间突然变得异常安静。下一秒，电梯门缓缓打开，一道巨大的蓝色海浪正冲着我卷上来，像是某种'活'的东西，带着光、带着脉动，像是在呼吸。它没有真正拍到我，但我能感觉到一股力量在把我往前拉，好像它想让我进去。我记得自己站在门口不敢动，既害怕又莫名兴奋，就像站在一个全新的世界入口前。",
+                dreamAnalysis: "梦境解析",
+                analysisContent: "这个梦象征着转变、压力与潜意识的召唤。电梯通常代表'状态改变'或'内在位置的移动'。海浪象征情绪、潜意识以及无法控制的外部力量。海浪向你'靠近但未淹没'，意味着你正在面对某种巨大的变化，但仍处在可以掌控的边缘。这种既害怕又兴奋的感觉，反映了你对未知领域的期待 —— 很可能与你近期的项目、未来规划或人生选择有关。梦正在推动你向前，让你跨入一个新的阶段。",
+                enterApp: "进入 App",
+                downloadInfo: "📥 模型文件获取方式：\n1. 联系作者获取完整 .glb 文件\n2. 或通过云盘链接下载\n3. 支持AR查看的完整3D模型",
+                modelLoadError: "❌ GLB模型加载失败：",
+                modelFileNotFound: "❌ 无法找到GLB模型文件，请确保'电梯.glb'文件在正确的位置"
+            },
+            en: {
+                loading: "Loading dream...",
+                title: "Dream: Elevator & Waves",
+                creatorName: "Wu Jiajun",
+                creatorTitle: "Student",
+                follow: "Follow",
+                followSuccess: "✨ Followed successfully",
+                like: "Like",
+                likeSuccess: "❤️ Liked successfully",
+                downloadModel: "Download Model",
+                keyword1: "Elevator",
+                keyword2: "Waves",
+                keyword3: "Unknown Space",
+                keyword4: "Fear",
+                keyword5: "Breakthrough",
+                keyword6: "World Entrance",
+                dreamDescription: "Dream Description",
+                dreamContent: "I had a very strange dream. I walked into an elevator, originally just wanting to go downstairs, but as soon as the door closed, the entire space became unusually quiet. The next second, the elevator door slowly opened, and a huge blue wave was rolling towards me, like something 'alive', with light and pulsation, as if breathing. It didn't actually hit me, but I could feel a force pulling me forward, as if it wanted me to enter. I remembered standing at the door, unable to move, both scared and strangely excited, as if standing at the entrance to a whole new world.",
+                dreamAnalysis: "Dream Analysis",
+                analysisContent: "This dream symbolizes transformation, pressure, and the call of the subconscious. Elevators usually represent 'state change' or 'internal position movement'. Waves symbolize emotions, subconscious, and uncontrollable external forces. The wave 'approached but didn't submerge' you, meaning you are facing some huge change, but still on the edge of control. This feeling of both fear and excitement reflects your anticipation for the unknown — likely related to your recent projects, future plans, or life choices. The dream is pushing you forward, letting you step into a new stage.",
+                enterApp: "Enter App",
+                downloadInfo: "📥 Model file access:\n1. Contact author for complete .glb file\n2. Or download via cloud link\n3. Complete 3D model supporting AR viewing",
+                modelLoadError: "❌ GLB model loading failed:",
+                modelFileNotFound: "❌ Unable to find GLB model file, please ensure 'elevator.glb' is in the correct location"
+            }
+        };
+
+        // 当前语言
+        let currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+
+        // 语言切换函数
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferredLanguage', lang);
+
+            // 更新按钮状态
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 更新HTML lang属性
+            document.documentElement.lang = lang === 'zh' ? 'zh' : 'en';
+
+            // 更新所有带有data-i18n属性的元素
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (i18nData[lang][key]) {
+                    element.textContent = i18nData[lang][key];
+                }
+            });
+        }
+
+        // 初始化语言
+        function initLanguage() {
+            // 设置初始语言按钮状态
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if ((btn.textContent === '中文' && currentLang === 'zh') ||
+                    (btn.textContent === 'English' && currentLang === 'en')) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 应用初始语言
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (i18nData[currentLang][key]) {
+                    element.textContent = i18nData[currentLang][key];
+                }
+            });
+
+            // 设置HTML lang属性
+            document.documentElement.lang = currentLang === 'zh' ? 'zh' : 'en';
+        }
+
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -595,7 +748,7 @@
         }
 
         function downloadModel() {
-            showToast('📥 模型文件获取方式：\n1. 联系作者获取完整 .usdz 文件\n2. 或通过云盘链接下载\n3. 支持AR查看的完整3D模型');
+            showToast(i18nData[currentLang].downloadInfo);
         }
     </script>
 
@@ -739,14 +892,14 @@
                 },
                 function (error) {
                     console.error('GLB模型加载错误：', error);
-                    alert('❌ GLB模型加载失败：' + error.message);
+                    alert(i18nData[currentLang].modelLoadError + error.message);
                     createFallbackModel();
                 }
             );
           })
           .catch(error => {
             console.error('GLB文件检查失败：', error);
-            alert('❌ 无法找到GLB模型文件，请确保"电梯.glb"文件在正确的位置');
+            alert(i18nData[currentLang].modelFileNotFound);
             createFallbackModel();
           });
 
@@ -828,7 +981,7 @@
             document.body.style.cursor = 'default';
 
             // 显示模型下载提示
-            showToast('📥 模型文件过大，请点击下载按钮获取完整模型');
+            showToast(i18nData[currentLang].downloadInfo);
         }, 1000);
 
         // 模型设置函数
@@ -894,6 +1047,13 @@
         });
 
         animate();
+    </script>
+
+    <!-- 页面加载时初始化语言 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initLanguage();
+        });
     </script>
 </body>
 </html>
